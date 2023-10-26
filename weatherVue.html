@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vue Weather App</title>
+    <style>
+        #app {
+            width: 100%;
+        }
+
+        .all-box {
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+
+        }
+
+        .box-one {
+            width: 300px;
+            height: 500px;
+            border: 1px solid black;
+            border-radius: 10px;
+            margin: 20px 10px;
+            font-size: 24px;
+            position: relative;
+        }
+
+        h2 {
+            text-align: center;
+            font-size: 40px;
+            font-weight: bold;
+        }
+
+        .maxT {
+            font-size: 40px;
+            margin-left: 20px;
+            /* margin-bottom: 50px; */
+        }
+
+        .minT {
+            font-size: 30px;
+            margin-top: 50px;
+        }
+
+        .pop {
+            position: absolute;
+            bottom: 150px;
+        }
+
+        .wxC {
+            position: absolute;
+            bottom: 50px;
+        }
+
+        .times {
+            position: absolute;
+            bottom: 0;
+        }
+
+        button {
+            width: 100px;
+            height: 50px;
+            border-radius: 10px;
+            margin-right: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app">
+        <h1>全台天气</h1>
+        <button v-for="(area, index) in citAll" :key="index" @click="citAlls(index)">{{area[0]}}</button>
+        <div class="all-box">
+            <div v-for="(location, index) in displayedData" :key="index" class="box-one">
+                <h2>{{location.locationName}}</h2>
+                <p>{{location.ci}}</p>
+                <div>
+                    <span class="maxT">{{location.maxT}}&#176;</span>
+                    <br>
+                    <span class="minT">{{location.minT}}&#176;</span>
+                </div>
+                <span class="pop">降雨機率:{{location.pop}}%</span>
+                <p class="wxC">{{location.wxCondition}}</p>
+                <div class="times">
+                    <span>{{location.startTime}}</span>
+                    <br>
+                    <span>{{location.endTime}}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script>
+        const { createApp } = Vue
+        createApp({
+            data() {
+                return {
+                    citAll: [
+                        ['全台'],
+                        ['北部', '基隆市', '新北市', '臺北市', '桃園市', '新竹市', '新竹縣', '苗栗縣'],
+                        ['中部', '臺中市', '南投縣', '彰化縣', '雲林縣', '嘉義市', '嘉義縣'],
+                        ['南部', '臺南市', '高雄市', '屏東縣'],
+                        ['東部', '宜蘭縣', '花蓮縣', '臺東縣'],
+                        ['外島', '澎湖縣', '金門縣', '連江縣']
+                    ],
+                    orgData: [],
+                    displayedData: [],
+                };
+            },
+            mounted() {
+                const url = 'https://opendata.cwb.gov.tw/api/v1/rest/datastore/F-C0032-001?Authorization=CWB-35EE947C-462C-4CCD-A87B-CE2A3EB7A484';
+
+                fetch(url)
+                    .then(response => response.json())
+                    .then(data => {
+                        console.log(data);
+                        this.organizationData(data);
+                        this.displayedData = this.orgData;
+                    });
+            },
+            methods: {
+                organizationData(item) {
+                    const locationAll = item.records.location;
+                    locationAll.forEach((location) => {
+                        let locationName = location.locationName;
+                        let loc_wE0_t_0 = location.weatherElement[0].time[0];
+                        let wxCondition = loc_wE0_t_0.parameter.parameterName;
+                        let startTime = loc_wE0_t_0.startTime;
+                        let endTime = loc_wE0_t_0.endTime;
+                        let minT = location.weatherElement[2].time[0].parameter.parameterName;
+                        let maxT = location.weatherElement[4].time[0].parameter.parameterName;
+                        let pop = location.weatherElement[1].time[0].parameter.parameterName;
+                        let ci = location.weatherElement[3].time[0].parameter.parameterName;
+                        this.orgData.push({
+                            locationName: locationName,
+                            wxCondition: wxCondition,
+                            startTime: startTime,
+                            endTime: endTime,
+                            minT: minT,
+                            maxT: maxT,
+                            pop: pop,
+                            ci: ci
+                        });
+                    });
+                },
+                citAlls(ind) {
+                    if (ind === 0) {
+                        this.displayedData = this.orgData;
+                    } else {
+                        const selectedArea = this.citAll[ind];
+                        const selectedCities = selectedArea.slice(1);
+                        this.displayedData = this.orgData.filter(location => selectedCities.includes(location.locationName));
+                    }
+                },
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>
